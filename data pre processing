@@ -1,0 +1,98 @@
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+from tensorflow.keras.layers import Activation, Conv2D
+from keras import backend as K
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+import pandas as pd
+from keras import layers, models
+from tensorflow.keras.utils import plot_model
+from keras import backend as K
+from keras.layers.core import Activation
+from keras.utils.generic_utils import get_custom_objects
+import PIL
+from tensorflow.keras.preprocessing.image import load_img
+
+mask_dir =r'C:\Users\jaeha\Desktop\stress\cpress6\cpress'
+surface_dir =r'C:\Users\jaeha\Desktop\stress\rmd6\rmd'
+
+print(len(os.listdir(mask_dir)))
+print(len(os.listdir(surface_dir)))
+
+import os
+img_size = (64,64)
+surface_img_paths = sorted([os.path.join(surface_dir, fname)
+                            for fname in os.listdir(surface_dir)
+                            if fname.endswith(".jpg")
+                           ])
+mask_img_paths = sorted([os.path.join(mask_dir, fname)
+                         for fname in os.listdir(mask_dir)
+                         if fname.endswith(".gif")
+                        ])
+print("Number of samples:", len(surface_img_paths))
+for input_path, target_path in zip(surface_img_paths[:10], mask_img_paths[:10]):
+    print(input_path, "|", target_path)
+    
+    
+    
+
+#이미지 데이터 부족할 시 사용하려고 놔둔 회전
+n_rotate = 1
+test_size = 1000
+train_size = 4000
+#(4000,64,64,1)을 할당
+train_array = np.zeros((n_rotate*train_size,) + img_size + (1,) , dtype = "float32") 
+train_test_array = np.zeros((test_size,) + img_size + (1,)   , dtype = "float32") 
+mask_array = np.zeros((n_rotate*train_size,) + img_size + (1,) , dtype = "float32") 
+mask_test_array = np.zeros((test_size,)   + img_size + (1,)   , dtype = "float32") 
+
+for j, path in enumerate(surface_img_paths):
+    img = PIL.Image.open(surface_img_paths[j])
+    img = np.array(img)/255
+    img = img[0:64,0:64]
+    img_90 = np.rot90(img)
+    img_180 = np.rot90(img_90)
+    img_270 = np.rot90(img_180)
+    if j<(train_size): 
+        train_array[j] = np.expand_dims(img, 2)
+        #train_array[n_rotate*j] = np.expand_dims(img, 2)
+        #train_array[n_rotate*j+1] = np.expand_dims(img_90, 2)
+        #train_array[n_rotate*j+2] = np.expand_dims(img_180, 2)
+        #train_array[n_rotate*j+3] = np.expand_dims(img_270, 2)
+    else: 
+        train_test_array[j-train_size] = np.expand_dims(img, 2)
+        if j==train_size+test_size-1: break
+
+for j, path in enumerate(mask_img_paths):
+    img = PIL.Image.open(mask_img_paths[j])
+    img = np.array(img)/255
+    img = img[0:64,0:64]
+    img_90 = np.rot90(img)
+    img_180 = np.rot90(img_90)
+    img_270 = np.rot90(img_270)
+    if j<(train_size): 
+        mask_array[j] = np.expand_dims(img, 2)
+        #mask_array[n_rotate*j] = np.expand_dims(img, 2)
+        #mask_array[n_rotate*j+1] = np.expand_dims(img_90, 2)
+        #mask_array[n_rotate*j+2] = np.expand_dims(img_180, 2)
+        #mask_array[n_rotate*j+3] = np.expand_dims(img_270, 2)
+    else: 
+        mask_test_array[j-train_size] = np.expand_dims(img, 2)
+        if j==train_size+test_size-1: break
+        
+        
+import random
+
+random.Random(1357).shuffle(surface_img_paths)
+random.Random(1357).shuffle(mask_img_paths)
+train_surface_img_paths = surface_img_paths[0:]
+train_mask_img_paths = mask_img_paths[0:]
+
+for input_path, target_path in zip(surface_img_paths[:10], mask_img_paths[:10]):
+    print(input_path, "|", target_path)
+
+print(len(train_array))
+print(len(mask_array))
+        
