@@ -1,0 +1,45 @@
+model = unet1_model
+n = 1000
+img1_a = np.zeros((n,)+img_size)
+img2_a = np.zeros((n,)+img_size)
+imgdiff = np.zeros((n,)+img_size)
+img_num = np.zeros_like(img1_a)
+sum_up = np.zeros((1000,))
+sum_down = np.zeros((1000,))
+img1_num = np.zeros_like(img1_a)
+img1_num_sum = np.zeros((1000,))
+for i in range(n):
+    arr1 = (train_test_array[i:i+1])
+    img = model.predict(arr1)*255
+    img = np.squeeze(img, 3)
+    img = np.squeeze(img, 0)
+    ma = img < 2
+    img = np.where(ma, 0, img)
+    img1_a[i] = img
+    arr2 = (mask_test_array[i:i+1])
+    img2 = arr2*255
+    img2 = np.squeeze(img2, 3)
+    img2 = np.squeeze(img2, 0)
+    img2_a[i] = img2
+    
+    #error
+    on = np.ones_like(img)
+    ze = np.zeros_like(img)
+    eq = img*img2 > 0
+    img1_ = np.where(eq, img, ze)
+    img2_ = np.where(eq, img2, ze)
+    imgdiff[i] = abs(img1_ - img2_)
+    img_num[i] = np.where(eq, on, ze)
+    sum_up[i] = np.sum(imgdiff[i])
+    sum_down[i] = np.sum(img_num[i])
+    a = sum_up[i]
+    b = sum_down[i]
+    
+    #갯수
+    img1_mask = img > 0
+    img1_num = np.where(img1_mask, on, ze)
+    img1_num_sum[i] = np.sum(img1_num) #이미지2에서 0이상인 갯수 
+    c = b/img1_num_sum[i]
+    if i<100:
+        print(a,' ',b,' ',c,img1_num_sum[i])
+error = np.sum(sum_up)/n
