@@ -1,0 +1,47 @@
+def double_conv(x, n_filters):
+    # Conv2D Batchnorm Relu
+    x = layers.Conv2D(n_filters, 3, padding = "same", kernel_initializer = 'he_normal')(x)
+    x = keras.layers.BatchNormalization()(x)
+    x = keras.activations.relu(x)
+    # Conv2D  Batchnorm Relu
+    x = layers.Conv2D(n_filters, 3, padding = "same", kernel_initializer = 'he_normal')(x)
+    x = keras.layers.BatchNormalization()(x)
+    x = keras.activations.relu(x)
+    return x
+
+def downsampling(x, n_filters):
+    bf = double_conv_block(x, n_filters)
+    af = layers.AveragePooling2D(2)(bf)
+    af = layers.Dropout(0.3)(af)
+    return bf, af
+
+def upsampling(x, concat, n_filters):
+    x = layers.Conv2DTranspose(n_filters, 3, 2, padding="same")(x)
+    x = layers.concatenate([x, concat])
+    x = layers.Dropout(0.3)(x)
+    x = double_conv_block(x, n_filters)
+    return x
+
+def build_unet():
+    inputs = layers.Input(shape = (64,64,1))#(64,64,1)
+    
+    bf1, af1 = downsampling(inputs, 64)#(64,64,64),(32,32,64)
+    
+    bf2, af2 = downsampling(af1, 128)#(32,32,128),(16.16.128)
+    
+    bf3, af3 = downsampling(af2, 256)#(16,16,128),(8,8,256)
+    
+    bridge = double_conv(af3, 512)#(8,8,512),(8,8,512)
+    
+    u7 = upsampling(bridge, bf3, 256)#(16,16,256),(16.16.512)
+    
+    u8 = upsampling(u7, bf2, 128)#(16,16,128),(32,32,256)
+    
+    u9 = upsampling(u8, bf1, 64)#(32,32,64),(64,64,128)
+    
+    outputs = layers.Conv2D(1, 1, padding="same", activation = "sigmoid")(u9)
+    unet_model = tf.keras.Model(inputs, outputs, name="U-Net")
+    return unet_model
+
+unet1_model = build_unet()
+unet1_model.summary()
