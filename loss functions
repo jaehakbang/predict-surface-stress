@@ -1,0 +1,41 @@
+from keras import backend as K #np쓰면 non-symbolic이라 오류난다
+#텐서는 인덱스로 값에 접근하려고 하면 값을 반환하는게 아니라 타입을 텐서로 반환한다.
+def mse_un_me(y_true,y_pred):
+    king = tf.zeros_like(y_true)
+    queen = tf.ones_like(y_true)
+    mask = y_pred < 0.002
+    below_to_zero = tf.where(mask, king, y_pred)
+    #0.002 이하로 예측하면 0을 예측한 것으로 간주하여 새로운 예측값 데이터 형성
+    q = K.sum(K.square(below_to_zero - y_true))#squared error
+    num_count = tf.math.equal(below_to_zero, y_true)
+    num_count = tf.where(num_count, king, queen)
+    re_num_count = K.sum(num_count)
+    #예측값과 실제 값중 서로 다른 것의 갯수
+    return q/re_num_count#다르게 예측한 것들만 가지고 mean sqared error
+
+def poisson_un_me(y_true,y_pred):
+    king = tf.zeros_like(y_true)
+    queen = tf.ones_like(y_true)
+    mask = y_pred < 0.002
+    below_to_zero = tf.where(mask, king, y_pred)
+    q = K.sum(below_to_zero - y_true*K.log(below_to_zero))#poisson error
+    num_count = tf.math.equal(below_to_zero, y_true)
+    num_count = tf.where(num_count, king, queen)
+    re_num_count = K.sum(num_count)
+    return q/re_num_count
+
+def mse_un(y_true,y_pred):
+    king = tf.zeros_like(y_true)
+    mask = y_pred < 0.002
+    below_to_zero = tf.where(mask, king, y_pred)
+    q = K.mean(K.square(below_to_zero - y_true))
+    #0으로 바꾸고 나서 전체에 대한 mse계산
+    return q
+
+def poisson_un(y_true,y_pred):
+    king = tf.zeros_like(y_true)
+    mask = y_pred < 0.002
+    below_to_zero = tf.where(mask, king, y_pred)
+    q = K.mean(below_to_zero - y_true*K.log(below_to_zero))
+    #0으로 바꾸고 나서 전체에 대한 poisson계산
+    return q
